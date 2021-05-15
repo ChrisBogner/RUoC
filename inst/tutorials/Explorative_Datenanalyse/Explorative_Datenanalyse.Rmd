@@ -1,0 +1,273 @@
+---
+title: "Explorative Datenanalyse"
+author: Christina Bogner
+output:
+  learnr::tutorial:
+    progressive: true
+runtime: shiny_prerendered
+bibliography: [../../bib/tutorials.bib]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(learnr)
+library(emo)
+library(tidyverse)
+a <- as.numeric(Sys.time())
+```
+# Was macht man in der explorativen Datenanalyse?
+
+Die explorative Analyse ist der erste und sehr wichtige Schritt der Datenanalyse. Sie wurde in den 1970ern von John Tukey eingeführt [@Tukey1977]. Bei der explorativen Datenanalyse geht es darum, die Daten auf unterschiedlichste Art und Weise darzustellen und Kenngrößen (Statistiken) auszurechnen. Dadurch lernen Sie Ihre Daten kennen, fassen sie zusammen und können eventuelle fehlerhafte Datenpunkte identifizieren. In diesem Tutorial lernen Sie typische Werkzeuge der explorativen Datenanalyse kennen.
+
+## Daten einlesen
+
+Da wir noch keine Daten in R einlesen können, erzeugen wir uns zufällige Beispieldaten aus der Normalverteilung mit Mittelwert 0 und Standardabweichung 1. Diese Verteilung nennt man auch Standardnormalverteilung. Später im Kurs werden wir uns natürlich echten Daten widmen. Jedes Mal, wenn Sie das Tutorial starten, werden frische Zufallsdaten erzeugt, daher sehen die Muster in den Abbildungen etwas anders aus.
+
+```{r echo = FALSE}
+sliderInput(inputId = "num", 
+              label = "Wählen Sie die Anzahl der Datenpunkte", 
+              value = 20, min = 1, max = 1000, width = "60%")
+```
+
+
+```{r echo = FALSE}
+DT::dataTableOutput("daten_table", width = "40%")
+```
+
+## X-Y-Diagramm
+
+Unsere Daten sehen sehr unspektakulär aus, wie man es von normalverteilten Daten erwarten würde. Sie streuen um die 0, ihren Mittelwert. Natürlich ist ein x-y-Diagramm bei nur einer Variablen recht einfach. Nichtsdestotrotz, gehört diese Darstellungsform eindeutig in die Toolbox der explorativen Datenanalyse.
+
+```{r, context="server"}
+output$daten_table = DT::renderDataTable(DT::datatable({
+    set.seed(a)
+    werte = rnorm(input$num)
+    data = tibble('Position_im_Datenvektor' = 1:input$num,
+                        'Werte' = round(werte, 4))
+}, rownames = F
+))
+
+```
+
+
+```{r echo = FALSE}
+plotOutput("daten", width = "60%")
+```
+
+
+```{r, context="server"}
+output$daten <- renderPlot({
+  set.seed(a)
+  werte <- rnorm(input$num)
+  my_data <- tibble('Position_im_Datenvektor' = 1:input$num,
+                        'Werte' = round(werte, 4))
+  ggplot(data = my_data, aes(x = Position_im_Datenvektor, y = Werte)) +
+      geom_point(col='blue') +
+      labs(title = paste(input$num,'Datenpunkte')) +
+      ylab('Werte') +
+      xlab('Position in Datenvektor')
+  })
+```
+
+## Fünf-Punkte-Zusammenfassung
+
+Typische Kenngrößen (Statistiken), die man in der explorativen Datenanalyse ausrechnet, sind das Minimum, 1. Quartil (25%-Quantil) Median (2. Quartil oder 50%-Quantil), Mittelwert, 3. Quartil (75%-Quantil) und das Maximum. Kurz nachzählen, ja, das sind 6 Werte. Der Mittelwert ist eine Zugabe `r emo::ji('smile')`. Um Quantile zu erhalten, sortiert man die Daten in aufsteigender Reihenfolge. Ein 25%-Quantil, z.B., ist dann derjenige Datenpunkt, der größer ist als 25% der Werte. Er wird auch 1. Quartil genannt, da er ja größer ist als das erste Viertel der Daten.
+
+```{r echo = FALSE}
+verbatimTextOutput("summary")
+```
+
+
+```{r, context="server"}
+output$summary = renderPrint({
+    set.seed(a)
+    werte = rnorm(input$num)
+    summary(werte)
+}
+)
+
+```
+
+
+## Histogramm
+
+Eine häufige Darstellungsform in der explorativen Datenanalyse ist das **Histogramm**. Dabei werden die Daten in Intervalle unterteil (sogen. Bins) und die Anzahl der Datenpunkte pro Intervall als Häufigkeit dargestellt.
+
+**Wie hängen die Muster im Histogramm von der Anzahl der Daten und der Anzahl der Bins ab?**
+
+Wenn man die Anzahl der Bins zu groß wählt im Vergleich zur vorhandenen Anzahl an Datenpunkten, dann bekommt man Muster im Histogramm, die es in den Daten gar nicht gibt. Das liegt daran, dass das menschliche Auge sehr gut im Muster erkennen (und manchmal auch erfinden) ist. Um also die Verteilung der Daten gut zu beschreiben, müssen die Anzahl der Datenpunkte und die Anzahl der Bins aufeinander abgestimmt sein.
+
+```{r echo = FALSE}
+sliderInput(inputId = "num_bins", 
+              label = "Wählen Sie die Anzahl der Bins", 
+              value = 5, min = 1, max = 50, width = "60%")
+```
+
+
+```{r echo = FALSE}
+plotOutput("hist", width = "60%")
+```
+
+
+```{r, context="server"}
+output$hist = renderPlot({
+  set.seed(a)
+  werte <- tibble(x = rnorm(input$num))
+  ggplot(data = werte, aes(x = x)) +
+    geom_histogram(position = "identity", col = 'black', fill = 'lightblue', bins = input$num_bins) +
+    labs(title = paste(input$num,'Datenpunkte und ', input$num_bins, 'Bins')) +
+    xlab('Daten') +
+    ylab('Häufigkeit')
+  })
+```
+
+Es gibt unterschiedliche Möglichkeiten, die optimale Anzahl der Bins zu bestimmen. Die wichtigste Regel lautet: nicht zu viele, damit es möglichst keine ungefüllte Bins gibt. Häufig hängt aber die beste Art der Darstellung von der Fragestellung ab (Was will ich eigentlich zeigen?).
+
+Eine Faustregel ([Freedman–Diaconis](https://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule)) setzt die Breite der Bins auf $h = 2 \times \mathrm{IQR} \times n^{-1/3}$, IQR steht für Interquartillänge (inter-quartile range). Setzen Sie unten statt 20 die oben gewählte Anzahl der Datenpunkte und berechnen Sie die Anzahl Bins.
+```{r addition, exercise=T, exercise.eval = T}
+set.seed(a)
+x <- rnorm(20)
+breite_bins <- 2 * IQR(x) / length(x)^(1/3)
+anzahl_bins <- (max(x) - min(x)) / breite_bins
+anzahl_bins
+```
+
+Der Plot unten entspricht dieser Regel. Am besten ist es also, wenn Sie die Anzahl der Bins nur verändern, wenn es triftige Gründe dafür gibt.
+
+```{r echo = FALSE}
+plotOutput("hist_easy", width = "60%")
+```
+
+```{r, context="server"}
+output$hist_easy <- renderPlot({
+  set.seed(a)
+  werte <- tibble(x = rnorm(input$num))
+  breite_bins <- 2 * IQR(werte$x) / length(werte$x)^(1/3)
+  anzahl_bins <- (max(werte$x) - min(werte$x)) / breite_bins
+  ggplot(data = werte, aes(x = x)) +
+    geom_histogram(position = "identity", col = 'black', fill = 'lightblue', bins = round(anzahl_bins, 0)) +
+    labs(title = paste(input$num,'Datenpunkte und ', round(anzahl_bins, 0), 'Bins')) +
+    xlab('Daten') +
+    ylab('Häufigkeit')
+  })
+```
+
+
+<!-- Eine andere Form des Histogramms ist ein sogen. **kumulatives Histogramm**. Hier wird nicht die Anzahl der Datenpunkte je Bin dargestellt, sondern die Anzahl aller vorherigen Bins aufsummiert (d.h. kumuliert). In dieser Form der Darstellung kann man noch einmal schön die Quantile sehen. Wir stellen es gleich mit der empfohlenen Anzahl der Bins dar. -->
+
+<!-- ```{r echo = FALSE} -->
+<!-- plotOutput("hist_cum", width = "70%") -->
+<!-- ``` -->
+
+<!-- ```{r, context="server"} -->
+<!-- output$hist_cum <- renderPlot({ -->
+<!--   set.seed(a) -->
+<!--   h=rnorm(input$num) -->
+<!--   h.hist=hist(h) -->
+<!--   hh=h.hist -->
+<!--   h.hist$counts = cumsum(h.hist$counts/length(h)) -->
+<!--   hh$counts = (hh$counts/length(h)) -->
+<!--   delta=abs(h.hist$breaks[1]-h.hist$breaks[2])/2 -->
+<!--   h.hist$breaks=h.hist$breaks+delta -->
+<!--   Fn=ecdf(h) -->
+<!--   Fn.sum=summary(Fn) -->
+
+<!--   par(mar=c(5.5,5,5,1),cex.axis=2,cex.lab=2,cex.main=2) -->
+<!--   plot(h.hist,col='lightblue',xlab='', ylab='relative Häufigkeit', -->
+<!--        main=paste('Kumulatives Histogramm,\n',length(h), 'Datenpunkte,'), -->
+<!--        xaxt='n', xlim = c(min(h) - 0.5, max(h) + 0.5)) -->
+<!-- Hmisc::mgp.axis(side=1,mgp=c(4,2,1),at=seq(-2,4,2),axistitle='Daten') -->
+<!-- points(h.hist$mids+delta,h.hist$counts,pch=19,col='black') -->
+<!-- #lines(h.hist$mids+delta,h.hist$counts) -->
+<!-- lines(Fn) -->
+<!-- points(quantile(h,probs=c(0.25,0.5,0.75)),c(0.25,0.5,0.75),col='red',pch=19) -->
+<!-- lines(quantile(h,probs=c(0.25,0.5,0.75)),c(0.25,0.5,0.75),type='h',lty=2, -->
+<!-- col='darkblue',lwd=3) -->
+<!-- segments(x0=rep(-4,3),x1=quantile(h,probs=c(0.25,0.5,0.75)),y0=c(0.25,0.5,0.75), -->
+<!-- y1=c(0.25,0.5,0.75),lty=2,col='darkblue',lwd=3) -->
+<!-- text(x=min(h),y=0.33,labels='Unterhalb sind noch \n 25% der Punkte.',cex=1.3,adj=0) -->
+<!-- text(x=min(h),y=0.57,labels='Unterhalb sind noch \n 50% der Punkte.',cex=1.3,adj=0) -->
+<!-- text(x=min(h),y=0.83,labels='Unterhalb sind noch \n 75% der Punkte.',cex=1.3,adj=0) -->
+<!-- mtext(side=1,at=quantile(h,probs=c(0.25,0.5,0.75)),line=-0.5, -->
+<!-- text=c(expression(x[0.25]),expression(x[0.5]),expression(x[0.75])),col='darkblue', -->
+<!-- cex=1.5) -->
+<!-- }) -->
+<!-- ``` -->
+
+
+## Boxplots
+
+Ein weiterer Klassiker der explorativen Datenanalyse ist der Boxplot, oder genauer Box-Whisker-Plot. Er stellt die Statistiken der Fünf-Punkte-Zusammenfassung als Box dar. Manchmal werden einzelne Punkte, die besonders groß oder besonders klein sind, extra dargestellt Lassen Sie das Tutorial mehrfach laufen, um grün dargestellte Punkte oberhalb oder unterhalb der Zäune (*whiskers*) zu sehen. Diese Punkte werden häufig als *Ausreißer* genannt. Das ist aber irreführend. Es handelt sich lediglich um Punkte, die jenseits des 1.5fachen Interquartilabstands liegen. Da es bei der explorativen Datenanalyse um beschreibende Statistik handelt, sollte man mit dem Begriff Ausreißer vorsichtig umgehen.
+
+```{r echo = FALSE}
+plotOutput("box", width = "60%")
+```
+
+```{r, context="server"}
+output$box <- renderPlot({
+  set.seed(a)
+  h.kurz <- tibble(y = rnorm(input$num))
+  
+  xcoord <- c(-0.5, 0.45)
+  
+  ggplot(data = h.kurz, aes(y = y)) +
+    geom_boxplot(width = 0.8) +
+    annotate(geom = 'segment', y = min(h.kurz$y), yend = max(h.kurz$y), x = xcoord[1], xend = xcoord[1], arrow = arrow(length = unit(2, "mm"), ends = 'both'), size = 1.5) +
+    annotate(geom = 'text', label = 'Wertebereich', y = median(h.kurz$y), x = xcoord[1] + 0.05, angle = 90, size = 8) +
+    annotate(geom = 'text', x = xcoord[2], y = quantile(h.kurz$y, probs = c(0.25, 0.5, 0.75)), label = c('25% Quantil', 'Median', '75% Quantil'), hjust = "left", size = 6) +
+    lims(x = c(-0.7, 0.7)) +
+    theme_void()
+  })
+
+```
+
+## QQ-Plots
+
+Quantil-Quantil-Plots arbeiten vergleichend. Erinnern Sie sich, Quantile sind nichts anderes als unsere sortierten Daten. Der klassische QQ-Plot nimmt als Vergleichsdatensatz Zufallszahlen aus der Standardnormalverteilung. Auch diese Zufallszahlen werden in aufsteigender Reihenfolge sortiert. Geplottet werden dann Pärchen: kleinster Wert aus unserem Datensatz gegen den kleinsten Wert der Zufallszahlen usw. Liegen die Punkte einigermaßen auf der eingezeichneten Geraden, sagt man, dass die eigenen Daten wohl aus der Normalverteilung stammen.
+
+Das ist kein formaler Test, sondern ein graphisches Tool. Weil aber in der schließenden Statistik sehr viele formale Tests verlangen, dass die eigenen Daten normalverteilt seien (z.B. t-Test), schaut man sich eben QQ-Plots an.
+
+Beobachten Sie, wie die Muster im QQ-Plot sich in Abhängigkeit von der Anzahl der Datenpunkte verändern, obwohl unsere Daten definitiv normalverteilt sind.
+
+```{r echo = FALSE}
+plotOutput("qq", width = "60%")
+```
+
+```{r, context="server"}
+output$qq <- renderPlot({
+  set.seed(a)
+  werte=rnorm(input$num)
+  
+  h.kurz <- tibble(x = rnorm(input$num))
+  
+  ggplot(data = h.kurz, aes(sample = x)) +
+    stat_qq(size = 3, col = 'blue') +
+    stat_qq_line() +
+    labs(title = paste(input$num,'Datenpunkte'),
+         x = 'Quantile der Normalverteilung',
+         y = 'Quantile der Daten')
+  })
+```
+
+
+## Fragen
+```{r q_histo, echo=FALSE}
+question("Die Anzahl der Bins in einem Histogramm",
+  answer("soll möglichst groß sein, um viel Information zu sehen."),
+  answer("soll möglichst klein sein, um die Daten kompakt darzustellen."),
+  answer("muss auf die Anzahl der Daten abgestimmt sein, um die Verteilung richtig darzustellen.", correct = TRUE)
+)
+```
+
+
+```{r q_normal, echo=FALSE}
+question("Welche Aussagen über die Normalverteilung sind richtig?",
+  answer("Sie ist durch 2 Parameter (Mittelwert und Varianz) vollständig charakterisiert.", correct = TRUE),
+  answer("Sie ist asymmetrisch."),
+  answer("Ihr Mittelwert und Median sind immer sehr ähnlich.", correct = TRUE),
+  answer("Ihr Mittelwert ist 0.")
+)
+```
+
+### Literatur
