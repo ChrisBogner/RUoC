@@ -5,6 +5,7 @@ output:
   learnr::tutorial:
     progressive: true
 runtime: shiny_prerendered
+description: "Kurze explorative Datenanalyse mit Histogramm und Boxplot. Nutzt normalverteilte Zufallsdaten."
 bibliography: [../../bib/tutorials.bib]
 ---
 
