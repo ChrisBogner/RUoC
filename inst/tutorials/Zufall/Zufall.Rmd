@@ -1,0 +1,279 @@
+---
+title: Zufall in der Statistik
+version: 1.1
+author: Christina Bogner
+#date: "Version vom: `r format(Sys.time(), '%d. %B %Y')`"
+output:
+  learnr::tutorial:
+    progressive: true
+    css: style_slides.css
+runtime: shiny_prerendered
+description: "Einführung in den Begriff Zufall und die Logik hinter den Hypothesentests."
+bibliography: [../../bib/statistik.bib]
+biblio-style: apalike
+link-citations: true
+---
+
+## Lernziele
+
+```{block, type='rmdoutcomes'}
+- Konzept des Zufalls in der Statistik erklären
+- Begriffe Null- und Alternativhypothese definieren
+- p-Wert definieren
+- Permutationstests durchführen
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(learnr)
+library(emo)
+library(tidyverse)
+library(kableExtra)
+
+a <- as.numeric(Sys.time())
+
+beispiel <- tibble('geschlecht' = c(rep('männlich', 24),
+                                        rep('weiblich', 24)),
+                      'entscheidung' = c(rep('befördert', 21),
+                                         rep('nicht_befördert', 3),
+                                         rep('befördert', 14),
+                                         rep('nicht_befördert', 10)))
+
+real_diff <- table(beispiel)[1,1]/sum(beispiel$geschlecht == 'männlich')*100 - table(beispiel)[2,1]/sum(beispiel$geschlecht == 'weiblich')*100
+```
+
+## Diskriminierung oder Zufall? {.subsection}
+
+
+Studie aus den 1970ern untersuchte, ob
+**Frauen bei Beförderung benachteiligt werden** [@Rosen1974].
+
+- Studienteilnehmer: männliche weiße Bankmanager
+- Entscheidung über Beförderung anhand von Personalakten
+- Personalakten identisch, bis auf das Geschlecht
+- Zufällige Austeilung der Akten an Studienteilnehmer
+
+<br>
+
+Dies ist ein **Experiment** 
+
+`r emo::ji('right_arrow')` Schließen auf kausalen Zusammenhang möglich
+
+### Daten {.section}
+```{r echo = FALSE}
+knitr::kable(addmargins(table(beispiel)), format = "html") %>%
+    kable_styling(
+      font_size = 15,
+      bootstrap_options = c("striped", "hover", "condensed")
+    ) 
+```
+
+### Forschungsfrage
+**Werden Frauen bei der Beförderung benachteiligt?**
+
+<br>
+
+Bedeutet die Differenz der Beförderungsraten von `r round(real_diff, 1)`% zwischen Männern und Frauen etwas oder ist es nur Zufall?
+
+
+### Welche Aussage stimmt?
+
+- Aussage 1: Es gibt keinen Unterschied in den Beförderungsraten; die beobachtete Differenz ist reiner Zufall.
+
+H$_0$: **Nullhypothese**. Die Variablen `geschlecht` und `entscheidung` sind unabhängig; die beobachtete Differenz (Beförderungsrate Männer - Beförderungsrate Frauen) ist reiner Zufall.
+
+<br>
+
+- Aussage 2: Frauen werden bei der Beförderung benachteiligt.
+
+H$_A$: **Alternativhypothese**. Die Variablen `geschlecht` und `entscheidung` sind *nicht* unabhängig; Frauen werden bei der Beförderung benachteiligt 
+
+### Permutieren
+**Behauptung 1**: `geschlecht` und `entscheidung` unabhängig.
+
+`r emo::ji('right_arrow')` Beim Wiederholen des Experiments: Schwankungen der Differenz nur wegen der zufälligen Austeilung der Personalakten
+
+`r emo::ji('right_arrow')` Wir mischen und verteilen die Personalakten neu (wir halten die `entscheidung` fest und permutieren das `geschlecht`!)
+
+```{r echo = FALSE}
+experiment <- sample(beispiel$geschlecht,
+                     size = length(beispiel$geschlecht), replace = F)
+```
+
+
+```{r echo = FALSE}
+actionButton(inputId = 'press',
+             label = 'Los')
+textOutput("diff", inline = T)
+htmlOutput('tab_experiment')
+```
+
+
+```{r, context="server"}
+observeEvent(input$press,{
+  experiment <- sample(beispiel$geschlecht, size = 
+                         length(beispiel$geschlecht), replace = F)
+  tab <- table(experiment, beispiel$entscheidung)[,1]
+  n <- as.numeric(round(tab[1]/table(beispiel$geschlecht)[1]*100 - tab[2]/table(beispiel$geschlecht)[2]*100, 1))
+
+    output$diff <- renderText(paste(' Differenz:', n, '%'))
+
+output$tab_experiment <- renderText({
+
+  kable(addmargins(table(experiment, beispiel$entscheidung))) %>%
+    kable_styling(
+      font_size = 15,
+      bootstrap_options = c("striped", "hover", "condensed")
+    ) 
+})
+})                            
+
+```
+
+
+### Mehrfache Permutation
+
+```{r echo = FALSE}
+sliderInput(inputId = "num", 
+              label = "Anzahl der Simulationen", 
+              value = 1, min = 1, max = 10000)
+```
+
+```{r echo = FALSE}
+plotOutput("daten", width = "60%")
+```
+
+
+```{r, context="server"}
+output$daten = renderPlot({
+res <- vector()
+set.seed(123)
+for (i in 1:input$num){
+  experiment <- sample(beispiel$geschlecht, size = length(beispiel$geschlecht), replace = F)
+  tab <- table(experiment, beispiel$entscheidung)[,1]
+  res[i] <- tab[1]/table(beispiel$geschlecht)[1]*100 -
+    tab[2]/table(beispiel$geschlecht)[2]*100
+}
+
+if (input$num <= 100) {
+  par(bty = 'n')
+  stripchart(res, offset = 0.5, vertical = F, xlim = c(-60, 60),
+           method = 'stack', pch=19, ylim = c(0, 40), col = rgb(0,206,209, max = 255), cex = 2, xlab = 'Differenzen', 
+           main = paste0('Anteil der Differenzen > ', round(real_diff, 1), '%: ', round(sum(sapply(res, function(x) x >= real_diff))/length(res)*100, 2), '%'))
+} else {
+   hist(res, col = rgb(0,206,209, max = 255), xlab = 'Differenzen', ylab = 'Anzahl',
+        xlim = c(-60, 60), main = paste0('Anteil der Differenzen > ', round(real_diff, 1), '%: ', 
+round(sum(sapply(res, function(x) x >= real_diff))/length(res)*100, 2), '%'))
+}
+abline(v = real_diff, col = 'red', lwd = 2)
+})
+
+```
+
+### Schlussfolgerung aus der Permutation
+
+- Die Differenz von `r round(real_diff, 1)`% ist sehr selten.
+- Kollidiert mit der Behauptung 1 (**Nullhypothese**) 
+- Wir lehnen die **Nullhypothese** ab.
+
+<br>
+
+`r emo::ji('question')` Kann man *Seltenheit* operationalisieren?
+
+`r emo::ji('check')` Festlegung eines Grenzwerts ($\alpha$), z.B. $\alpha$ = 0.05 oder 5%
+
+## Hypothesentests
+
+```{block, type='rmdinfo'}
+- statistisches Verfahren zum Testen von Aussagen anhand von Daten
+
+- Nullhypothese: oft Abwesenheit von Unterschied oder Effekt
+
+- Alternative: oft die interessierende Forschungsfrage
+
+- Wenn Daten der Nullhypothese widersprechen, wird diese zugunsten der Alternativhypothese verworfen.
+```
+
+<br> Unser Beispiel ist ein *Permutationstest*.
+
+### p-Wert
+
+Wie groß ist der Anteil der Differenzen von mindestens `r round(real_diff, 1)`%?
+
+```{r echo = FALSE}
+res <- vector()
+set.seed(123)
+for (i in 1:10000){
+  experiment <- sample(beispiel$geschlecht, size = length(beispiel$geschlecht), replace = F)
+  tab <- table(experiment, beispiel$entscheidung)[,1]
+  res[i] <- tab[1]/table(beispiel$geschlecht)[1]*100 -
+    tab[2]/table(beispiel$geschlecht)[2]*100
+}
+
+p_val <- round(sum(sapply(res, function(x) x >= real_diff))/length(res)*100, 2)
+```
+
+Wenn wir das Experiment 10000 Mal wiederholen: `r p_val`%
+
+```{block, type='rmdinfo'}
+**p-Wert**
+
+Wahrscheinlichkeit, Daten zu beobachten, die mindestens so extrem sind, wie in dem vorliegenden Datensatz, wenn die Nullhypothese gilt.
+```
+
+<br>
+
+Übersetzung in unser Beispiel:
+Wahrscheinlichkeit, Differenzen von mindestens `r round(real_diff, 1)`% zu beobachten, wenn die Variablen `geschlecht` und `entscheidung` unabhängig sind.
+
+### Verteilung der Differenzen
+
+- Differenz der Beförderungsraten ändert sich bei jeder neuen Zuteilung der Personalakten
+- Differenz ist eine **Zufallsvariable**
+- mit symmetrischer Verteilung
+
+```{r echo = F, out.width = "60%"}
+hist(res, freq = F, breaks = seq(-60, 60, 10), col = rgb(0,206,209, max = 255), ylim = c(0, 0.04), main = 'Histogramm der Differenzen für 10000 Simulationen',
+     ylab = 'Dichte', xlab = 'Differenzen')
+lines(density(res, kernel = 'gaussian', bw = 'SJ', adjust = 75),
+      col = 'orange', lwd = 3)
+x = seq(-60, 60, 1)
+lines(x, dnorm(x = x, mean = 0, sd = sd(res)), col = 'red', lwd = 3)
+legend('topleft', legend = c('Dichteschätzung', 'Normalverteilung'), col = c('orange', 'red'), lty = 1, bty = 'n')
+```
+
+
+### Warum ist die Verteilung symmetrisch?
+
+**Zentraler Grenzwertsatz** (s. @Fahrmeir2016): 
+Anteile (oder deren Differenzen) unter der Nullhypothese normalverteilt, wenn einige (milde) Bedingungen erfüllt sind
+
+
+```{r echo = F, out.width = "60%"}
+hist(res, freq = F, breaks = seq(-60, 60, 10), col = rgb(0,206,209, max = 255), ylim = c(0, 0.04), main = 'Histogramm der Differenzen für 10000 Simulationen',
+     ylab = 'Dichte', xlab = 'Differenzen')
+lines(density(res, kernel = 'gaussian', bw = 'SJ', adjust = 75),
+      col = 'orange', lwd = 3)
+x = seq(-60, 60, 1)
+lines(x, dnorm(x = x, mean = 0, sd = sd(res)), col = 'red', lwd = 3)
+legend('topleft', legend = c('Dichteschätzung', 'Normalverteilung'), col = c('orange', 'red'), lty = 1, bty = 'n')
+```
+
+### Schlussfolgerung aus dem Permutationstest
+
+- p-Wert, d.h. Die Wahrscheinlichkeit, eine Differenz von mindestens `r round(real_diff, 1)`% zu beobachten, wenn die Variablen `geschlecht` und `entscheidung` unabhängig sind, beträgt `r p_val`%
+
+- Grenzwert für Entscheidung: $\alpha$ = 5%
+
+- `r p_val` < $\alpha$ 
+
+- Wir verwerfen die Nullhypothese und schließen: Frauen werden bei Entscheidungen über Beförderung, die von weißen, männlichen Managern getroffen werden, benachteiligt.
+
+
+## Literatur
+
+---
+nocite: '@Diez2019'
+...
+
