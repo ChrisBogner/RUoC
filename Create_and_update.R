@@ -3,7 +3,10 @@
 usethis::create_package('/media/Daten/Chrissies Dateien/Lehre/Material/GitHub/RUoC')
 
 # create tutorial
-usethis::use_tutorial("Zufall", "Zufall in der Statistik", open = interactive())
+#usethis::use_tutorial("Zufall", "Zufall in der Statistik", open = interactive())
+usethis::use_tutorial("Hypothesis", "Hypothesis tests", open = interactive())
+
+
 
 #usethis::use_gpl3_license('Christina Bogner')
 

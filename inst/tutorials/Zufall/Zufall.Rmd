@@ -1,12 +1,12 @@
 ---
-title: Zufall in der Statistik
-version: 1.1
-author: Christina Bogner
+title: "Zufall in der Statistik"
+version: 1.2
+author: "Christina Bogner"
 #date: "Version vom: `r format(Sys.time(), '%d. %B %Y')`"
 output:
   learnr::tutorial:
     progressive: true
-    css: style_slides.css
+    #css: [../../styles/style_slides.css]
 runtime: shiny_prerendered
 description: "Einführung in den Begriff Zufall und die Logik hinter den Hypothesentests."
 bibliography: [../../bib/statistik.bib]
@@ -16,12 +16,10 @@ link-citations: true
 
 ## Lernziele
 
-```{block, type='rmdoutcomes'}
 - Konzept des Zufalls in der Statistik erklären
 - Begriffe Null- und Alternativhypothese definieren
 - p-Wert definieren
 - Permutationstests durchführen
-```
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
@@ -177,15 +175,8 @@ abline(v = real_diff, col = 'red', lwd = 2)
 - Kollidiert mit der Behauptung 1 (**Nullhypothese**) 
 - Wir lehnen die **Nullhypothese** ab.
 
-<br>
-
-`r emo::ji('question')` Kann man *Seltenheit* operationalisieren?
-
-`r emo::ji('check')` Festlegung eines Grenzwerts ($\alpha$), z.B. $\alpha$ = 0.05 oder 5%
-
 ## Hypothesentests
 
-```{block, type='rmdinfo'}
 - statistisches Verfahren zum Testen von Aussagen anhand von Daten
 
 - Nullhypothese: oft Abwesenheit von Unterschied oder Effekt
@@ -193,7 +184,7 @@ abline(v = real_diff, col = 'red', lwd = 2)
 - Alternative: oft die interessierende Forschungsfrage
 
 - Wenn Daten der Nullhypothese widersprechen, wird diese zugunsten der Alternativhypothese verworfen.
-```
+
 
 <br> Unser Beispiel ist ein *Permutationstest*.
 
@@ -216,15 +207,14 @@ p_val <- round(sum(sapply(res, function(x) x >= real_diff))/length(res)*100, 2)
 
 Wenn wir das Experiment 10000 Mal wiederholen: `r p_val`%
 
-```{block, type='rmdinfo'}
-**p-Wert**
 
-Wahrscheinlichkeit, Daten zu beobachten, die mindestens so extrem sind, wie in dem vorliegenden Datensatz, wenn die Nullhypothese gilt.
-```
+**p-Wert**: Wahrscheinlichkeit, Daten zu beobachten, die mindestens so extrem sind, wie in dem vorliegenden Datensatz, wenn die Nullhypothese gilt.
+
 
 <br>
 
 Übersetzung in unser Beispiel:
+
 Wahrscheinlichkeit, Differenzen von mindestens `r round(real_diff, 1)`% zu beobachten, wenn die Variablen `geschlecht` und `entscheidung` unabhängig sind.
 
 ### Verteilung der Differenzen
@@ -264,9 +254,7 @@ legend('topleft', legend = c('Dichteschätzung', 'Normalverteilung'), col = c('o
 
 - p-Wert, d.h. Die Wahrscheinlichkeit, eine Differenz von mindestens `r round(real_diff, 1)`% zu beobachten, wenn die Variablen `geschlecht` und `entscheidung` unabhängig sind, beträgt `r p_val`%
 
-- Grenzwert für Entscheidung: $\alpha$ = 5%
-
-- `r p_val` < $\alpha$ 
+- Das ist sehr selten.
 
 - Wir verwerfen die Nullhypothese und schließen: Frauen werden bei Entscheidungen über Beförderung, die von weißen, männlichen Managern getroffen werden, benachteiligt.
 

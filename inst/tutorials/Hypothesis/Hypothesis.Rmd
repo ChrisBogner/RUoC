@@ -1,0 +1,266 @@
+---
+title: "Hypothesis tests"
+version: 1.1
+author: "Christina Bogner"
+output:
+  learnr::tutorial:
+    progressive: true
+    #css: [../../css/style_slides.css]
+runtime: shiny_prerendered
+description: "Introduction to hypothesis tests."
+bibliography: [../../bib/statistik.bib]
+biblio-style: apalike
+link-citations: true
+---
+
+## Goal
+
+Explain the idea behind simulation-based hypothesis tests
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(learnr)
+library(emo)
+library(tidyverse)
+library(kableExtra)
+library(infer)
+
+a <- as.numeric(Sys.time())
+
+study <- tibble('gender' = c(rep('male', 24),
+                                        rep('female', 24)),
+                      'decision' = c(rep('promoted', 21),
+                                         rep('not_promoted', 3),
+                                         rep('promoted', 14),
+                                         rep('not_promoted', 10)))
+
+real_diff <- table(study)[1,1]/sum(study$gender == 'male')*100 - table(study)[2,1]/sum(study$gender == 'female')*100
+```
+
+## Discrimination or pure chance? {.subsection}
+
+
+A study by @Rosen1974 analysed whether 
+**women are discriminated against in promotion decisions** [@Rosen1974].
+
+- participants: 48 white male bank supervisors
+- decide about promotion based on personal files (one by participant)
+- personal files identical except gender
+- random assignment of files to participants
+
+<br>
+
+This is an **experiment** 
+
+`r emo::ji('right_arrow')` We can conclude on causality
+
+### Data {.section}
+```{r echo = FALSE}
+knitr::kable(addmargins(table(study)), format = "html") %>%
+    kable_styling(
+      font_size = 15,
+      bootstrap_options = c("striped", "hover", "condensed")
+    ) 
+```
+
+### Research question
+**Are women discriminated against in promotion decisions?**
+
+<br>
+
+Does the difference between men and women of `r round(real_diff, 2)`% mean that women are discriminated against, or is this difference due to chance?
+
+
+### Which statement is correct?
+
+- Statement 1: There is no real difference, the observed difference is due to chance.
+
+H$_0$: **Null hypothesis**. The variables `gender` and `decision` are independent; the observed difference in promotions is random.
+
+<br>
+
+- Statement 2: Women are discriminated against.
+
+H$_A$: **Alternative hypothesis**. The variables `gender` and `decision` are dependent. Women are discriminated against in decisions about promotion.
+
+### Permute!
+**Statement 1**: `gender` and `decision` are independent
+
+`r emo::ji('right_arrow')` If we repeat the experiment, the difference will change because of random assignment of personal files only. 
+
+`r emo::ji('right_arrow')` We toss the personal files and redistribute them again, but keep the decision fixed (i.e. we permute the variable `gender` and keep the variable `decision` as is!)
+
+```{r echo = FALSE}
+experiment <- sample(study$gender,
+                     size = length(study$gender), replace = F)
+```
+
+
+```{r echo = FALSE}
+actionButton(inputId = 'press',
+             label = 'Go!')
+textOutput("diff", inline = T)
+htmlOutput('tab_experiment')
+```
+
+
+```{r, context="server"}
+observeEvent(input$press,{
+  experiment <- sample(study$gender, size = 
+                         length(study$gender), replace = F)
+  tab <- table(experiment, study$decision)[,1]
+  n <- as.numeric(round(tab[1]/table(study$gender)[1]*100 - tab[2]/table(study$gender)[2]*100, 1))
+
+    output$diff <- renderText(paste(' Difference:', n, '%'))
+
+output$tab_experiment <- renderText({
+
+  kable(addmargins(table(experiment, study$decision))) %>%
+    kable_styling(
+      font_size = 15,
+      bootstrap_options = c("striped", "hover", "condensed")
+    ) 
+})
+})                            
+
+```
+
+
+### Repeated permutation
+
+```{r echo = FALSE}
+sliderInput(inputId = "num", 
+              label = "Number of permutations", 
+              value = 1, min = 1, max = 10000)
+```
+
+```{r echo = FALSE}
+plotOutput("daten", width = "60%")
+```
+
+
+```{r, context="server"}
+output$daten = renderPlot({
+res <- vector()
+set.seed(123)
+for (i in 1:input$num){
+  experiment <- sample(study$gender, size = length(study$gender), replace = F)
+  tab <- table(experiment, study$decision)[,1]
+  res[i] <- tab[1]/table(study$gender)[1]*100 -
+    tab[2]/table(study$gender)[2]*100
+}
+
+if (input$num <= 100) {
+  par(bty = 'n')
+  stripchart(res, offset = 0.5, vertical = F, xlim = c(-60, 60),
+           method = 'stack', pch=19, ylim = c(0, 40), col = rgb(0,206,209, max = 255), cex = 2, xlab = 'Differences', 
+           main = paste0('Proportion of differences > ', round(real_diff, 1), '%: ', round(sum(sapply(res, function(x) x >= real_diff))/length(res)*100, 2), '%'))
+} else {
+   hist(res, col = rgb(0,206,209, max = 255), xlab = 'Differences', ylab = 'Frequency',
+        xlim = c(-60, 60), main = paste0('Proportion of differences > ', round(real_diff, 1), '%: ', 
+round(sum(sapply(res, function(x) x >= real_diff))/length(res)*100, 2), '%'))
+}
+abline(v = real_diff, col = 'red', lwd = 2)
+})
+
+```
+
+### Conclusion from permutations
+
+- The difference of `r round(real_diff, 1)`% is rare.
+- This contradicts the Statement 1 (**null hypothesis**) 
+- We reject the **null hypothesis**.
+
+
+## Hypothesis test
+
+- Statistical method that tests whether an effect is due to chance.
+
+- Null hypothesis: no effect statement
+
+- Alternative hypothesis: the opposite of null, often the research question 
+
+- If data contradicts the null hypothesis, it is rejected and the alternative accepted.
+
+
+<br> 
+
+Our example is a *permutation test*.
+
+### $p$ value
+
+How large is the proportion of differences of at least `r round(real_diff, 1)`%?
+
+```{r echo = FALSE}
+res <- vector()
+set.seed(123)
+for (i in 1:10000){
+  experiment <- sample(study$gender, size = length(study$decision), replace = F)
+  tab <- table(experiment, study$decision)[,1]
+  res[i] <- tab[1]/table(study$gender)[1]*100 -
+    tab[2]/table(study$gender)[2]*100
+}
+
+p_val <- round(sum(sapply(res, function(x) x >= real_diff))/length(res)*100, 2)
+```
+
+If we repeat the experiment 10000 times: `r p_val`%
+
+**$p$ value** is the probability to obtain data as extreme or more extreme than what has been observed, if the null hypothesis is true.
+
+
+<br>
+
+For our example, it means:
+Probability to obtain differences of at least `r round(real_diff, 1)`%, if the varialbes `gender` and `decision` are independent.
+
+### Distribution of differences
+
+- The distribution of differences changes with every new permutation of personal files
+- It is a **random variable**
+- with a symmetric distribution
+
+```{r echo = F, out.width = "60%"}
+hist(res, freq = F, breaks = seq(-60, 60, 10), col = rgb(0,206,209, max = 255), ylim = c(0, 0.04), main = 'Histogram of differences for 10000 permutations',
+     ylab = 'Dichte', xlab = 'Differences')
+lines(density(res, kernel = 'gaussian', bw = 'SJ', adjust = 75),
+      col = 'orange', lwd = 3)
+x = seq(-60, 60, 1)
+lines(x, dnorm(x = x, mean = 0, sd = sd(res)), col = 'red', lwd = 3)
+legend('topleft', legend = c('Probability density', 'Normal distribution'), col = c('orange', 'red'), lty = 1, bty = 'n')
+```
+
+
+### Why is the distribution symmetrical?
+
+**Central limit theorem** [@Fahrmeir2016]: 
+Proportions (or their differences) are normally distributed under the Null hypothesis. provided some mild assumptions are fulfilled.
+
+
+```{r echo = F, out.width = "60%"}
+hist(res, freq = F, breaks = seq(-60, 60, 10), col = rgb(0,206,209, max = 255), ylim = c(0, 0.04), main = 'Histogram of differences for 10000 permutations',
+     ylab = 'Dichte', xlab = 'Differences')
+lines(density(res, kernel = 'gaussian', bw = 'SJ', adjust = 75),
+      col = 'orange', lwd = 3)
+x = seq(-60, 60, 1)
+lines(x, dnorm(x = x, mean = 0, sd = sd(res)), col = 'red', lwd = 3)
+legend('topleft', legend = c('Probability density', 'Normal distribution'), col = c('orange', 'red'), lty = 1, bty = 'n')
+```
+
+### Conclusions from the permutation test
+
+- $p$ value: probability to observe differences of at least `r round(real_diff, 1)`%, if the null hypothesis is true, i.e. the variables `gender` and `decision` are independent, equals `r p_val`%
+
+- This is extremely rare.
+
+- We reject the null hypothesis and conclude: Women were discriminated against in the 1970 (provided the white male banker are representative for the then-population of decision-makers).
+
+
+## Literature
+
+---
+nocite: '@Diez2019'
+...
+
