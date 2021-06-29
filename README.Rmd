@@ -1,0 +1,33 @@
+---
+title: "RUoC"
+author: "Christina Bogner"
+date: "`r format(Sys.time(), '%Y-%m-%d')`"
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+
+A collection of tutorials for data analysis and statistical modelling for courses taught at the Institute of Geography, University of Cologne, Germany. Tutorials are in German or English.
+
+
+## Installation
+
+You can install the development version from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("ChrisBogner/RUoC")
+```
