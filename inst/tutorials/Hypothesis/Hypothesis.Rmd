@@ -214,7 +214,7 @@ If we repeat the experiment 10000 times: `r p_val`%
 <br>
 
 For our example, it means:
-Probability to obtain differences of at least `r round(real_diff, 1)`%, if the varialbes `gender` and `decision` are independent.
+Probability to obtain differences of at least `r round(real_diff, 1)`%, if the variables `gender` and `decision` are independent.
 
 ### Distribution of differences
 
@@ -255,7 +255,7 @@ legend('topleft', legend = c('Probability density', 'Normal distribution'), col 
 
 - This is extremely rare.
 
-- We reject the null hypothesis and conclude: Women were discriminated against in the 1970 (provided the white male banker are representative for the then-population of decision-makers).
+- We reject the null hypothesis and conclude: Women were discriminated against in the 1970 (provided the white male bank supervisors are representative for the then-population of decision-makers).
 
 
 ## Literature
