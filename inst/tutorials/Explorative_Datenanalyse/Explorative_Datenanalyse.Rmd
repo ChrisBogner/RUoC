@@ -21,9 +21,9 @@ a <- as.numeric(Sys.time())
 
 Die explorative Analyse ist der erste und sehr wichtige Schritt der Datenanalyse. Sie wurde in den 1970ern von John Tukey eingeführt [@Tukey1977]. Bei der explorativen Datenanalyse geht es darum, die Daten auf unterschiedlichste Art und Weise darzustellen und Kenngrößen (Statistiken) auszurechnen. Dadurch lernen Sie Ihre Daten kennen, fassen sie zusammen und können eventuelle fehlerhafte Datenpunkte identifizieren. In diesem Tutorial lernen Sie typische Werkzeuge der explorativen Datenanalyse kennen.
 
-## Daten einlesen
+## Daten
 
-Da wir noch keine Daten in R einlesen können, erzeugen wir uns zufällige Beispieldaten aus der Normalverteilung mit Mittelwert 0 und Standardabweichung 1. Diese Verteilung nennt man auch Standardnormalverteilung. Später im Kurs werden wir uns natürlich echten Daten widmen. Jedes Mal, wenn Sie das Tutorial starten, werden frische Zufallsdaten erzeugt, daher sehen die Muster in den Abbildungen etwas anders aus.
+Wir erzeugen uns zufällige Beispieldaten aus der Normalverteilung mit Mittelwert 0 und Standardabweichung 1. Diese Verteilung nennt man auch Standardnormalverteilung. Später im Kurs werden wir uns natürlich echten Daten widmen. Jedes Mal, wenn Sie das Tutorial starten, werden frische Zufallsdaten erzeugt, daher sehen die Muster in den Abbildungen etwas anders aus.
 
 ```{r echo = FALSE}
 sliderInput(inputId = "num", 
@@ -38,7 +38,7 @@ DT::dataTableOutput("daten_table", width = "40%")
 
 ## X-Y-Diagramm
 
-Unsere Daten sehen sehr unspektakulär aus, wie man es von normalverteilten Daten erwarten würde. Sie streuen um die 0, ihren Mittelwert. Natürlich ist ein x-y-Diagramm bei nur einer Variablen recht einfach. Nichtsdestotrotz, gehört diese Darstellungsform eindeutig in die Toolbox der explorativen Datenanalyse.
+Unsere Daten sehen sehr unspektakulär aus, wie man es von normalverteilten Daten erwarten würde. Sie streuen um die 0, ihren Mittelwert. Natürlich ist ein x-y-Diagramm bei nur einer Variablen recht einfach. Dennoch gehört diese Darstellungsform eindeutig in die Toolbox der explorativen Datenanalyse.
 
 ```{r, context="server"}
 output$daten_table = DT::renderDataTable(DT::datatable({
@@ -93,11 +93,11 @@ output$summary = renderPrint({
 
 ## Histogramm
 
-Eine häufige Darstellungsform in der explorativen Datenanalyse ist das **Histogramm**. Dabei werden die Daten in Intervalle unterteil (sogen. Bins) und die Anzahl der Datenpunkte pro Intervall als Häufigkeit dargestellt.
+Eine häufige Darstellungsform in der explorativen Datenanalyse ist das **Histogramm**. Dabei werden die Daten in Intervalle unterteilt (sogen. Bins) und die Anzahl der Datenpunkte pro Intervall als Häufigkeit dargestellt.
 
 **Wie hängen die Muster im Histogramm von der Anzahl der Daten und der Anzahl der Bins ab?**
 
-Wenn man die Anzahl der Bins zu groß wählt im Vergleich zur vorhandenen Anzahl an Datenpunkten, dann bekommt man Muster im Histogramm, die es in den Daten gar nicht gibt. Das liegt daran, dass das menschliche Auge sehr gut im Muster erkennen (und manchmal auch erfinden) ist. Um also die Verteilung der Daten gut zu beschreiben, müssen die Anzahl der Datenpunkte und die Anzahl der Bins aufeinander abgestimmt sein.
+Wenn man die Anzahl der Bins zu groß wählt im Vergleich zur vorhandenen Anzahl an Datenpunkten, dann bekommt man Muster im Histogramm, die es in den Daten gar nicht gibt. Das liegt daran, dass das menschliche Auge hervorragned im Muster erkennen (und manchmal auch erfinden) ist. Um also die Verteilung der Daten gut zu beschreiben, müssen die Anzahl der Datenpunkte und die Anzahl der Bins aufeinander abgestimmt sein.
 
 ```{r echo = FALSE}
 sliderInput(inputId = "num_bins", 
@@ -227,7 +227,7 @@ output$box <- renderPlot({
 
 Quantil-Quantil-Plots arbeiten vergleichend. Erinnern Sie sich, Quantile sind nichts anderes als unsere sortierten Daten. Der klassische QQ-Plot nimmt als Vergleichsdatensatz Zufallszahlen aus der Standardnormalverteilung. Auch diese Zufallszahlen werden in aufsteigender Reihenfolge sortiert. Geplottet werden dann Pärchen: kleinster Wert aus unserem Datensatz gegen den kleinsten Wert der Zufallszahlen usw. Liegen die Punkte einigermaßen auf der eingezeichneten Geraden, sagt man, dass die eigenen Daten wohl aus der Normalverteilung stammen.
 
-Das ist kein formaler Test, sondern ein graphisches Tool. Weil aber in der schließenden Statistik sehr viele formale Tests verlangen, dass die eigenen Daten normalverteilt seien (z.B. t-Test), schaut man sich eben QQ-Plots an.
+Das ist kein formaler Test, sondern ein grafisches Tool. Weil aber in der schließenden Statistik sehr viele formale Tests verlangen, dass die eigenen Daten normalverteilt seien (z.B. t-Test), schaut man sich eben QQ-Plots an.
 
 Beobachten Sie, wie die Muster im QQ-Plot sich in Abhängigkeit von der Anzahl der Datenpunkte verändern, obwohl unsere Daten definitiv normalverteilt sind.
 
@@ -266,7 +266,7 @@ question("Die Anzahl der Bins in einem Histogramm",
 question("Welche Aussagen über die Normalverteilung sind richtig?",
   answer("Sie ist durch 2 Parameter (Mittelwert und Varianz) vollständig charakterisiert.", correct = TRUE),
   answer("Sie ist asymmetrisch."),
-  answer("Ihr Mittelwert und Median sind immer sehr ähnlich.", correct = TRUE),
+  answer("Ihr Mittelwert und Median sind gleich.", correct = TRUE),
   answer("Ihr Mittelwert ist 0.")
 )
 ```
